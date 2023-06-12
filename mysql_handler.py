@@ -1,4 +1,4 @@
-import MySQLdb
+import mysql.connector
 import csv
 import proto_sql
 
@@ -17,7 +17,7 @@ def mysqlconnect():
     }
 
     try:
-        db_connection=MySQLdb.Connection(**conn_params)
+        db_connection=mysql.connector.connect(**conn_params)
     except:
         print("error : Schema not found")
         return 0
@@ -33,10 +33,22 @@ def mysql_check_table(table:str,cursor):
     except:
         return 0
 
-def write_csv(table:str,cursor,schema):
+def write_csv(table:str,cursor,schema:str):
+
     path_for_file = proto_sql.catch_table_path(table,schema)
-    file = open(path_for_file,"x")
-    #TODO
+    table_data = [dict()]
+    tables_data = {} #Dicionário de tabelas(listas) = Nosso banco de dados
+    
+    for row in cursor:
+        table_data.append(row)
+
+    tables_data[table] = table_data
+    headers = cursor.column_names
+
+    with open(path_for_file,"w",newline='') as csvfile:
+        writer = csv.DictWriter(csvfile,fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(table_data)
 
 def mysqlimport():
     
@@ -48,12 +60,12 @@ def mysqlimport():
         database_glob = input('>> ')
         conn = mysqlconnect() 
    
-    cursor = MySQLdb.cursors.SSCursor(conn)
+    cursor = conn.cursor(dictionary=True,buffered=True)
     
     print('Type the table to import : ')
     table = input('>> ')
 
-    if mysql_check_table(table,cursor) :
+    if mysql_check_table(table,cursor) : #popula o cursor com os dados da tabela toda
 
         if not proto_sql.check_existing_schema(schema=database_glob) : 
 
@@ -77,7 +89,6 @@ def mysqlimport():
             elif overwrite == 'n':
                 return 0
         else : 
-
             #create a new file with the name of table
             write_csv(table,cursor,schema=database_glob)
             

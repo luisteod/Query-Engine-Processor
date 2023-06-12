@@ -1,5 +1,5 @@
 import csv
-import mysql
+import mysql_handler
 import os
 
 def insert(table:str, values:str):
@@ -92,7 +92,7 @@ def data_import():
         print("Select the server (mysql or postgres)")
         server = input('>> ')
     if server == 'mysql':
-        mysql.mysqlimport()
+        mysql_handler.mysqlimport()
     elif server == 'postgres':
         #TODO
         return
