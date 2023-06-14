@@ -33,10 +33,10 @@ def mysql_check_table(table:str,cursor):
     except:
         return 0
 
-def write_csv(table:str,cursor,schema:str):
+def write_csv(table:str,cursor,schema:str) -> bool: 
 
     path_for_file = proto_sql.catch_table_path(table,schema)
-    table_data = [dict()]
+    table_data = []
     tables_data = {} #Dicionário de tabelas(listas) = Nosso banco de dados
     
     for row in cursor:
@@ -65,40 +65,42 @@ def mysqlimport():
     print('Type the table to import : ')
     table = input('>> ')
 
-    if mysql_check_table(table,cursor) : #popula o cursor com os dados da tabela toda
+    while True:
+        if mysql_check_table(table,cursor) :
+            break
+        else :
+            print("error : Table not exists in server")
+            print('Type the table to import : ')
+            table = input('>> ')   
 
-        if not proto_sql.check_existing_schema(schema=database_glob) : 
+    if not proto_sql.check_existing_schema(schema=database_glob) : 
 
-            create_folder = None
-            while not(create_folder == 'y' or create_folder == 'n') :
-                print('Schema not found locally, want to create? (y/n)')
-                create_folder = input('>> ')
-            
-            if create_folder=='y' :
-                proto_sql.create_schema(schema=database_glob)
-            else :
-                return 0
-            
-        if proto_sql.check_existing_table(table,schema=database_glob) :
-            overwrite = None
-            while not(overwrite == 'y' or overwrite =='n'):
-                print('Table already exists, do you wanna overwrite ? (y/n)')
-                overwrite = input('>> ')
-            if overwrite == 'y':
-                write_csv(table,cursor,schema=database_glob)
-            elif overwrite == 'n':
-                return 0
-        else : 
-            #create a new file with the name of table
+        create_folder = None
+        while not(create_folder == 'y' or create_folder == 'n') :
+            print('Schema not found locally, want to create? (y/n)')
+            create_folder = input('>> ')
+        
+        if create_folder=='y' :
+            proto_sql.create_schema(schema=database_glob)
+        else :
+            return True
+        
+    if proto_sql.check_existing_table(table,schema=database_glob) :
+        overwrite = None
+        while not(overwrite == 'y' or overwrite =='n'):
+            print('Table already exists, do you wanna overwrite ? (y/n)')
+            overwrite = input('>> ')
+        if overwrite == 'y':
             write_csv(table,cursor,schema=database_glob)
+        elif overwrite == 'n':
+            return True
+    else : 
+        #create a new file with the name of table
+        write_csv(table,cursor,schema=database_glob)
             
-    else :
-        print("error : Table not exists in server")
-        return 0
-
-    for row in cursor:
-        print(row)
     
     cursor.close()
     conn.close()
+
+    return True
     
