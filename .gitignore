@@ -1,0 +1,8 @@
+# Specify filepatterns you want git to ignore.
+*
+!.gitignore
+!*.py
+!schemas
+!__pycache__
+!LICENSE
+!README.md

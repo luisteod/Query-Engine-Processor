@@ -1,5 +1,6 @@
 import csv
 import mysql_handler
+import postgres_handler
 import os
 
 schema = None
@@ -170,9 +171,9 @@ def data_import():
         server = input(">> ")
     if server == "mysql":
         mysql_handler.mysqlimport()
-    elif server == "postgres":
-        # TODO
-        return
+    elif server == 'postgres':
+        postgres_handler.postgresimport()
+    return
 
 
 def query():
