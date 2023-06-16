@@ -5,8 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4f040890-d203-449a-a968-6e0f65e34a5e" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/proto_sql.py" beforeDir="false" afterPath="$PROJECT_DIR$/proto_sql.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -16,6 +15,11 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN"
+  }
+}]]></component>
   <component name="GithubPullRequestsUISettings">
     <option name="selectedUrlAndAccountId">
       <UrlAndAccount>
@@ -107,7 +111,7 @@
       <workItem from="1686608258946" duration="2602000" />
       <workItem from="1686610898189" duration="299000" />
       <workItem from="1686611214490" duration="3157000" />
-      <workItem from="1686922282467" duration="1037000" />
+      <workItem from="1686922282467" duration="1675000" />
     </task>
     <servers />
   </component>
