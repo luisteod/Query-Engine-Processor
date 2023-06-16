@@ -33,22 +33,6 @@ def mysql_check_table(table:str,cursor):
     except:
         return 0
 
-def write_csv(table:str,cursor,schema:str) -> bool: 
-
-    path_for_file = proto_sql.catch_table_path(table,schema)
-    table_data = []
-    tables_data = {} #Dicionário de tabelas(listas) = Nosso banco de dados
-    
-    for row in cursor:
-        table_data.append(row)
-
-    tables_data[table] = table_data
-    headers = cursor.column_names
-
-    with open(path_for_file,"w",newline='') as csvfile:
-        writer = csv.DictWriter(csvfile,fieldnames=headers)
-        writer.writeheader()
-        writer.writerows(table_data)
 
 def mysqlimport():
     
@@ -91,12 +75,14 @@ def mysqlimport():
             print('Table already exists, do you wanna overwrite ? (y/n)')
             overwrite = input('>> ')
         if overwrite == 'y':
-            write_csv(table,cursor,schema=database_glob)
+            headers = cursor.column_names
+            proto_sql.write_csv(table,cursor,headers,schema=database_glob)
         elif overwrite == 'n':
             return True
     else : 
         #create a new file with the name of table
-        write_csv(table,cursor,schema=database_glob)
+        headers = cursor.column_names
+        proto_sql.write_csv(table,cursor,headers,schema=database_glob)
             
     
     cursor.close()

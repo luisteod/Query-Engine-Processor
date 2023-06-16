@@ -7,11 +7,35 @@ table_path = None
 join_table_path = None
 
 
+def write_csv(table:str,cursor,colum_names:list,schema:str) -> bool: 
+
+    path_for_file = catch_table_path(table,schema)
+    table_data = []
+    tables_data = {} #Dicionário de tabelas(listas) = Nosso banco de dados
+    
+    for row in cursor:
+        table_data.append(row)
+
+    tables_data[table] = table_data
+    #headers = cursor.column_names
+
+    with open(path_for_file,"w",newline='') as csvfile:
+        writer = csv.DictWriter(csvfile,fieldnames=colum_names)
+        writer.writeheader()
+        writer.writerows(table_data)
+
 def read_csv(columns: list) -> list:
     with open(table_path, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
-        for row in reader:
-            print(row[columns[0]], row[columns[1]], row[columns[2]])
+        
+        if(columns == '*'):
+            """ for row in reader:
+                for val:
+                    print(val) """ #TODO
+        else:
+            for row in reader:
+                for iterator in columns:
+                    print(row[iterator] + "     ") 
 
 
 # returns status of FROM statement
@@ -43,21 +67,28 @@ def FROM(
 
 
 def SELECT(query_list: list) -> bool:
-    table = query_list[3]
-    columns = query_list[1].split(",")  # catch list of columns required by user
-    if query_list[5] == "inner":
-        if query_list[6] == "join":
-            join_table = query_list[7]
-            join_flag = True
-            if FROM(table, join_flag, join_table):  # from with a table to join
-                read_csv(columns)
-                return True
+    if len(query_list) > 2:
+        table = query_list[3]
+        if query_list[1] == '*':
+            columns = '*'
         else:
-            print("error: expected expression after 'inner' clause")
-            return False
-    elif FROM(table):
-        read_csv(columns)  # TODO
+            columns = query_list[1].split(",")  # catch list of columns required by user
+        if len(query_list) > 4:
+            if query_list[5] == "inner":
+                if query_list[6] == "join":
+                    join_table = query_list[7]
+                    join_flag = True
+                    if FROM(table, join_flag, join_table):  # from with a table to join
+                        read_csv(columns)
+                        return True
+                else:
+                    print("error: expected expression after 'inner' clause")
+                    return False
+        elif FROM(table):
+            read_csv(columns)  # TODO
         return True
+    else:
+        print("error : Select statement")
 
 
 def INSERT(table: str, values: str):
