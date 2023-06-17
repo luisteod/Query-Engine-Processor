@@ -5,11 +5,10 @@ import proto_sql
 host_glob = 'localhost'
 database_glob = 0
 user_glob = 'postgres'
-password_glob = 'batata123'
+password_glob = 'Henrique312'
 port_glob = '5432'
 
 def postgresconect():
-
 
     conn_params = {
         'database': database_glob,
@@ -71,16 +70,13 @@ def postgresimport():
                 print('Table already exists, do you wanna overwrite ? (y/n)')
                 overwrite = input('>> ')
             if overwrite == 'y':
-                cursor.execute(f"SELECT * FROM {table}")
                 headers = [desc[0] for desc in cursor.description]
                 cursorDict = [dict(zip(headers, row)) for row in cursor.fetchall()]
                 proto_sql.write_csv(table, cursorDict, headers, schema=database_glob)
             elif overwrite == 'n':
                 return 0
         else:
-
             # create a new file with the name of table
-            cursor.execute(f"SELECT * FROM {table}")
             headers = [desc[0] for desc in cursor.description]
             cursorDict = [dict(zip(headers, row)) for row in cursor.fetchall()]
             proto_sql.write_csv(table, cursorDict, headers, schema=database_glob)
