@@ -37,12 +37,6 @@ def postgres_check_table(table: str, cursor):
     except:
         return 0
 
-
-def write_csv(table: str, cursor, schema):
-    path_for_file = proto_sql.catch_table_path(table, schema)
-    file = open(path_for_file, "x")
-    # TODO
-
 def postgresimport():
     global database_glob
 
@@ -53,7 +47,6 @@ def postgresimport():
         conn = postgresconect()
 
     cursor = conn.cursor()
-    #cursor = psycopg2.cursors.SSCursor(conn)
 
     print('Type the table to import : ')
     table = input('>> ')
@@ -78,13 +71,19 @@ def postgresimport():
                 print('Table already exists, do you wanna overwrite ? (y/n)')
                 overwrite = input('>> ')
             if overwrite == 'y':
-                write_csv(table, cursor, schema=database_glob)
+                cursor.execute(f"SELECT * FROM {table}")
+                headers = [desc[0] for desc in cursor.description]
+                cursorDict = [dict(zip(headers, row)) for row in cursor.fetchall()]
+                proto_sql.write_csv(table, cursorDict, headers, schema=database_glob)
             elif overwrite == 'n':
                 return 0
         else:
 
             # create a new file with the name of table
-            write_csv(table, cursor, schema=database_glob)
+            cursor.execute(f"SELECT * FROM {table}")
+            headers = [desc[0] for desc in cursor.description]
+            cursorDict = [dict(zip(headers, row)) for row in cursor.fetchall()]
+            proto_sql.write_csv(table, cursorDict, headers, schema=database_glob)
 
     else:
         print("error : Table not exists in server")
