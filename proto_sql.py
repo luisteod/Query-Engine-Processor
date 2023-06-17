@@ -8,38 +8,52 @@ table_path = None
 join_table_path = None
 
 
-def write_csv(table:str,cursor,colum_names:list,schema:str) -> bool: 
-
-    path_for_file = catch_table_path(table,schema)
+def write_csv(table: str, cursor, colum_names: list, schema: str) -> bool:
+    path_for_file = catch_table_path(table, schema)
     table_data = []
-    tables_data = {} #Dicionário de tabelas(listas) = Nosso banco de dados
-    
+    tables_data = {}  # Dicionário de tabelas(listas) = Nosso banco de dados
+
     for row in cursor:
         table_data.append(row)
 
     tables_data[table] = table_data
-    #headers = cursor.column_names
+    # headers = cursor.column_names
 
-    with open(path_for_file,"w",newline='') as csvfile:
-        writer = csv.DictWriter(csvfile,fieldnames=colum_names)
+    with open(path_for_file, "w", newline="") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=colum_names)
         writer.writeheader()
         writer.writerows(table_data)
 
+
 def read_csv(columns: list) -> list:
-    with open(table_path, newline='') as csvfile:
+    with open(table_path, newline="") as csvfile:
         reader = csv.DictReader(csvfile)
-        
-        if(columns == '*'):
-            """ for row in reader:
-                for val:
-                    print(val) """ #TODO
-        else:
+        if columns == "*":
+            lista = []
+            columns = reader.fieldnames
+            print(columns)
             for row in reader:
-                for iterator in columns:
-                    print(row[iterator] + "     ") 
+                for iter_col in columns:
+                    lista.append(row.get(iter_col))
+                print(lista)
+                lista.clear()
+
+        else:
+            lista = []
+            print(columns)
+            for row in reader:
+                for iter_col in columns:
+                    lista.append(row.get(iter_col))
+                print(lista)
+                lista.clear()
 
 
-# returns status of FROM statement
+"""
+returns status of FROM statement and fills the global "table_path" with table 
+to be used in the query
+"""
+
+
 def FROM(
     input_table: str = None, join_flag: bool = False, join_table: str = None
 ) -> bool:
@@ -70,11 +84,11 @@ def FROM(
 def SELECT(query_list: list) -> bool:
     if len(query_list) > 2:
         table = query_list[3]
-        if query_list[1] == '*':
-            columns = '*'
+        if query_list[1] == "*":
+            columns = "*"
         else:
             columns = query_list[1].split(",")  # catch list of columns required by user
-        if len(query_list) > 4:
+        if len(query_list) > 4:  # user wants a join
             if query_list[5] == "inner":
                 if query_list[6] == "join":
                     join_table = query_list[7]
@@ -171,7 +185,7 @@ def data_import():
         server = input(">> ")
     if server == "mysql":
         mysql_handler.mysqlimport()
-    elif server == 'postgres':
+    elif server == "postgres":
         postgres_handler.postgresimport()
     return
 
