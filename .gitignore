@@ -1,5 +1,6 @@
 # Specify filepatterns you want git to ignore.
 *
+!requirements.txt
 !.gitignore
 !*.py
 !schemas
