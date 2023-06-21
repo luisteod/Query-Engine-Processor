@@ -200,7 +200,7 @@ def query():
         query = input(">> ")
         proto_token(query)
     else:
-        print("error : Schema not found in PROTO_SQL server")
+        print("error : Schema not found in query_proc server")
 
 
 def main():

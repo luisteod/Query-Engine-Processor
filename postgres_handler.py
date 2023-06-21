@@ -1,6 +1,6 @@
 import psycopg2
 import csv
-import proto_sql
+import query_proc
 
 host_glob = 'localhost'
 database_glob = 0
@@ -52,7 +52,7 @@ def postgresimport():
 
     if postgres_check_table(table, cursor):
 
-        if not proto_sql.check_existing_schema(schema=database_glob):
+        if not query_proc.check_existing_schema(schema=database_glob):
 
             create_folder = None
             while not (create_folder == 'y' or create_folder == 'n'):
@@ -60,11 +60,11 @@ def postgresimport():
                 create_folder = input('>> ')
 
             if create_folder == 'y':
-                proto_sql.create_schema(schema=database_glob)
+                query_proc.create_schema(schema=database_glob)
             else:
                 return 0
 
-        if proto_sql.check_existing_table(table, schema=database_glob):
+        if query_proc.check_existing_table(table, schema=database_glob):
             overwrite = None
             while not (overwrite == 'y' or overwrite == 'n'):
                 print('Table already exists, do you wanna overwrite ? (y/n)')
@@ -72,14 +72,14 @@ def postgresimport():
             if overwrite == 'y':
                 headers = [desc[0] for desc in cursor.description]
                 cursorDict = [dict(zip(headers, row)) for row in cursor.fetchall()]
-                proto_sql.write_csv(table, cursorDict, headers, schema=database_glob)
+                query_proc.write_csv(table, cursorDict, headers, schema=database_glob)
             elif overwrite == 'n':
                 return 0
         else:
             # create a new file with the name of table
             headers = [desc[0] for desc in cursor.description]
             cursorDict = [dict(zip(headers, row)) for row in cursor.fetchall()]
-            proto_sql.write_csv(table, cursorDict, headers, schema=database_glob)
+            query_proc.write_csv(table, cursorDict, headers, schema=database_glob)
 
     else:
         print("error : Table not exists in server")

@@ -1,4 +1,4 @@
-import proto_sql
+import query_proc
 
 column = "building"
 
