@@ -1,4 +1,4 @@
-import query_proc
+import query_processor
 
 column = "building"
 
