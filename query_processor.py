@@ -7,22 +7,7 @@ schema = None
 table_path = None
 join_table_path = None
 
-commands = {
-    "select": (None),
-    "update": (None),
-    "set" : (None),
-    "insert": (None),
-    "into" : (None),
-    "values": (None),
-    "from": (None),
-    "join": (None),
-    "on" : (None),
-    "using" : (None),
-    "where": (None),
-    "and": (None),
-    "or": (None),
-    "order by": (None),
-}
+commands = {}
 
 
 def write_csv(table: str, cursor, colum_names: list, schema: str) -> bool:
@@ -48,7 +33,7 @@ def read_csv(table_path:str) -> list:
         data = []
         for row in reader:
             data.append(row)
-        return reader
+        return data
 
         """ columns = reader.fieldnames
         table = {}
@@ -83,53 +68,62 @@ def read_csv(table_path:str) -> list:
 def tuple_value(data:tuple) -> str:
     return data[0]
 
-def _from(input_table:str,join_table:str) -> bool:
+def _join() -> bool:
+
+    if commands["on"] != None:
+        join_column = tuple_value(commands["on"])
+        join_column = join_column.split('=')
+        if len(join_column) != 2:
+            print("Error : Wrong argument near {}".format(join_column))
+            return 0
+        else:
+            var = join_column[0].split('.')
+            table_1 = var[0]
+            column_table_1 = var[1]
+
+            var = join_column[1].split('.')
+            table_2 = var[0]
+            column_table_2 = var[1]
+    elif commands["using"] != None:
+        join_column = tuple_value(commands["using"])
+        var = join_column.split('.')
+        table = var[0]
+        column = var[1]
+
+def _from() -> list:
     global schema
     global commands
     data = []
 
-#splits the two columns in ON statement
     if commands["join"] != None:
-        if commands["on"] != None:
-            join_column = tuple_value(commands["on"])
-            join_column = join_column.split('=')
-            if len(join_column) != 2:
-                print("Error : Wrong argument near {}".format(join_column))
-                return 0
-            else:
-                var = join_column[0].split('.')
-                table_1 = var[0]
-                column_table_1 = var[1]
-
-                var = join_column[1].split('.')
-                table_2 = var[0]
-                column_table_2 = var[1]
-        elif commands["using"] != None:
-            join_column = tuple_value(commands["using"])
-            var = join_column.split('.')
-            table = var[0]
-            column = var[1]
-
-
-    if (input_table is None) or (
-        not check_existing_table(input_table, schema)
-    ):  # error in finding from table
-        print("error: expecting expression after 'from' clause")
-        return False
+        _join()
     else:
-        table_path = catch_table_path(input_table, schema)
-        data = read_csv(table_path)
-        if join_flag == False:            
-            return True
-        elif join_flag == True:
-            if not check_existing_table(
-                join_table, schema
-            ):  # error in finding join table
-                print("error: expecting expression after 'join' clause")
-                return False
-            else:
-                join_table_path = catch_table_path(join_table, schema)
-                return True
+        table = tuple_value(commands["from"])
+        if check_existing_table(table,schema):
+            table_path = catch_table_path(table,schema)
+            data = read_csv(table_path=table_path)
+            return data
+
+
+    # if (input_table is None) or (
+    #     not check_existing_table(input_table, schema)
+    # ):  # error in finding from table
+    #     print("error: expecting expression after 'from' clause")
+    #     return False
+    # else:
+    #     table_path = catch_table_path(input_table, schema)
+    #     data = read_csv(table_path)
+    #     if join_flag == False:            
+    #         return True
+    #     elif join_flag == True:
+    #         if not check_existing_table(
+    #             join_table, schema
+    #         ):  # error in finding join table
+    #             print("error: expecting expression after 'join' clause")
+    #             return False
+    #         else:
+    #             join_table_path = catch_table_path(join_table, schema)
+    #             return True
 
 
 def _select(query_list: list) -> bool:
@@ -171,6 +165,25 @@ def parser(query: str) -> bool:
 
     global commands
 
+    commands = {
+
+    "select": (None),
+    "update": (None),
+    "set" : (None),
+    "insert": (None),
+    "delete":(None),
+    "into" : (None),
+    "values": (None),
+    "from": (None),
+    "join": (None),
+    "on" : (None),
+    "using" : (None),
+    "where": (None),
+    "and": (None),
+    "or": (None),
+    "order by": (None),
+}
+    
     query = query.replace(", ", ",")
     query = query.replace(" ,", ",")
     query = query.replace(" =","=")
@@ -228,7 +241,7 @@ def parser(query: str) -> bool:
         return 0
 
     #TODO
-    data = _from(input_table=table,join_table=join_table,)
+    data = _from()
 
     if "select" in query_list:
         i = query_list.index("select")
@@ -236,22 +249,22 @@ def parser(query: str) -> bool:
         columns = query_list[i + 1]
         commands["select"] = columns,i
         _select(data,columns)
-    elif "update" in query_list:
-        i = query_list.index("set")
-        #TODO
-    elif "insert" in query_list:
-        i = query_list.index("values")
-        #TODO
-    else:
-        print("Error : unexpected")
-        return 0
+    # elif "update" in query_list:
+    #     i = query_list.index("set")
+    #     #TODO
+    # elif "insert" in query_list:
+    #     i = query_list.index("values")
+    #     #TODO
+    # else:
+    #     print("Error : unexpected")
+    #     return 0
 
-def check_existing_table(table: str, schema):
+def check_existing_table(table: str, schema:str):
     path = catch_table_path(table, schema)
     return os.path.exists(path)
 
 
-def catch_table_path(table: str, schema):
+def catch_table_path(table: str, schema:str):
     path = (catch_schema_path(schema) + "/tables/{}.csv").format(table)
     return path
 
