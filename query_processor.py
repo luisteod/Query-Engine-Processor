@@ -248,6 +248,18 @@ def _insert():
 def _delete():
     return
 
+#verify if typed query has clauses in correct positioning
+def is_query_valid() -> bool:
+    for key, value in commands.items():
+        if key in ["select", "update", "insert", "delete"]:
+            if value is not None and value[1] != 0:
+                print("Invalid query:", key)
+                return False
+        if key in ["from"]:
+            if value is not None and value[1] != 2:
+                print("Invalid query:", key)
+                return False
+    return True
 
 # splits the query with it's respectively statements
 # and treat accordingly
@@ -257,21 +269,21 @@ def parser(query: str):
 
     commands = {
 
-    "select": (None),
-    "update": (None),
-    "set" : (None),
-    "insert": (None),
-    "delete":(None),
-    "into" : (None),
-    "values": (None),
-    "from": (None),
-    "join": (None),
-    "on" : (None),
-    "using" : (None),
-    "where": (None),
-    "and": (None),
-    "or": (None),
-    "order by": (None),
+    "select": None,
+    "update": None,
+    "set" : None,
+    "insert": None,
+    "delete":None,
+    "into" : None,
+    "values": None,
+    "from": None,
+    "join": None,
+    "on" : None,
+    "using" : None,
+    "where": None,
+    "and": None,
+    "or": None,
+    "order by": None,
 }
     
     query = query.replace(", ", ",")
@@ -347,17 +359,22 @@ def parser(query: str):
     else:
         print("Error : unexpected")
         return False
-    
-    data = _from()
 
-    if tuple_value(commands["select"]):
-        _select(data)
-    elif tuple_value(commands["update"]):
-        _update()
-    elif tuple_value(commands["insert"]):
-        _insert()
-    elif tuple_value(commands["delete"]):
-        _delete()
+    if(is_query_valid()):
+
+        data = _from()
+
+        if tuple_value(commands["select"]):
+            _select(data)
+        elif tuple_value(commands["update"]):
+            _update()
+        elif tuple_value(commands["insert"]):
+            _insert()
+        elif tuple_value(commands["delete"]):
+            _delete()
+
+    else:
+        return False
         
 
 def check_existing_table(table: str, schema:str):
