@@ -87,7 +87,7 @@ def _join(data1:list,data2:list):
             return False
     
     elif tuple_value(commands["using"]) != None:
-
+ 
         try:
             using_value = tuple_value(commands["using"])
             column = using_value
@@ -95,6 +95,7 @@ def _join(data1:list,data2:list):
             for item1 in data1:
                 for item2 in data2:
                     if item1[column] == item2[column]:
+                        #item2.pop(column) #removes equal column
                         result.append({**item1, **item2})
             return result
         
@@ -208,6 +209,8 @@ def _select(data:list):
                     for key in iter(row):
                         printable.append(row[key])
                     print(printable)
+
+                return True
             else:
                 columns = columns.split(',')
 
@@ -226,12 +229,13 @@ def _select(data:list):
                         if key in headers:
                             printable.append(row[key])
                     print(printable)
-
-                return 
+                
+                return True
         except:
             print("Error : Wrong argument near {}".format(columns))
             return False
     else:
+        print("Error : Wrong argument near SELECT")
         return False
     
 
@@ -325,27 +329,36 @@ def parser(query: str):
         print("Error : wrong argument {}".format(table))
         return 0
 
-    #TODO
-    data = _from()
 
     if "select" in query_list:
         i = query_list.index("select")
         # Take argument for select
         columns = query_list[i + 1]
         commands["select"] = columns,i
+    elif "update" in query_list:
+        i = query_list.index("set")
+        #TODO
+    elif "insert" in query_list:
+        i = query_list.index("values")
+        #TODO
+    elif "delete" in query_list:
+        i = query_list.index()
+        #TODO
+    else:
+        print("Error : unexpected")
+        return False
+    
+    data = _from()
+
+    if tuple_value(commands["select"]):
         _select(data)
-    # elif "update" in query_list:
-    #     i = query_list.index("set")
-    #     TODO
-    # elif "insert" in query_list:
-    #     i = query_list.index("values")
-    #     TODO
-    # elif "delete" in query_list:
-    #     i = query_list.index()
-    #     TODO
-    # else:
-    #     print("Error : unexpected")
-    #     return 0
+    elif tuple_value(commands["update"]):
+        _update()
+    elif tuple_value(commands["insert"]):
+        _insert()
+    elif tuple_value(commands["delete"]):
+        _delete()
+        
 
 def check_existing_table(table: str, schema:str):
     path = catch_table_path(table, schema)
