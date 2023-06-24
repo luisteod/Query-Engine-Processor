@@ -205,11 +205,28 @@ def _select(data:list):
                 print(headers)
                 for row in data:
                     printable = []  
-                    for key in row.keys():
+                    for key in iter(row):
                         printable.append(row[key])
                     print(printable)
             else:
-                
+                columns = columns.split(',')
+
+                #verifies if a columns typed is in the table
+                for input_key in columns:
+                    if input_key not in data[0]:
+                        print("Error : {} didn't exists".format(input_key))
+                        return False
+                    
+                headers = columns
+                print(headers)
+
+                for row in data:
+                    printable = []
+                    for key in iter(row):
+                        if key in headers:
+                            printable.append(row[key])
+                    print(printable)
+
                 return 
         except:
             print("Error : Wrong argument near {}".format(columns))
