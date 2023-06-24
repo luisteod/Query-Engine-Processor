@@ -250,15 +250,50 @@ def _delete():
 
 #verify if typed query has clauses in correct positioning
 def is_query_valid() -> bool:
+    first_clause = 0
+    second_clause = 1
+    third_clause = 1
+    fourth_clause = 1
+    fifth_clause = 1
+    sixth_clause = 1
+
     for key, value in commands.items():
         if key in ["select", "update", "insert", "delete"]:
-            if value is not None and value[1] != 0:
-                print("Invalid query:", key)
-                return False
-        if key in ["from"]:
-            if value is not None and value[1] != 2:
-                print("Invalid query:", key)
-                return False
+            if value is not None:
+                first_clause = value[1]
+                if first_clause != 0:
+                    print("Invalid query:", key)
+                    return False
+        if key in ["from", "into", "set"]:
+            if value is not None:
+                second_clause = value[1]
+                if second_clause < first_clause:
+                    print("Invalid query:", key)
+                    return False
+        if key in ["join", "values"]:
+            if value is not None:
+                third_clause = value[1]
+                if third_clause < second_clause:
+                    print("Invalid query:", key)
+                    return False
+        if key in ["using", "on", "order by"]:
+            if value is not None:
+                fourth_clause = value[1]
+                if fourth_clause < third_clause:
+                    print("Invalid query:", key)
+                    return False
+        if key in ["where"]:
+            if value is not None:
+                fifth_clause = value[1]
+                if fifth_clause < fourth_clause:
+                    print("Invalid query:", key)
+                    return False
+        if key in ["and", "or"]:
+            if value is not None:
+                sixth_clause = value[1]
+                if sixth_clause < fifth_clause:
+                    print("Invalid query:", key)
+                    return False
     return True
 
 # splits the query with it's respectively statements
