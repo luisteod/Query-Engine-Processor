@@ -250,50 +250,30 @@ def _delete():
 
 #verify if typed query has clauses in correct positioning
 def is_query_valid() -> bool:
-    first_clause = 0
-    second_clause = 1
-    third_clause = 1
-    fourth_clause = 1
-    fifth_clause = 1
-    sixth_clause = 1
+    global commands
 
-    for key, value in commands.items():
-        if key in ["select", "update", "insert", "delete"]:
-            if value is not None:
-                first_clause = value[1]
-                if first_clause != 0:
-                    print("Invalid query:", key)
-                    return False
-        if key in ["from", "into", "set"]:
-            if value is not None:
-                second_clause = value[1]
-                if second_clause < first_clause:
-                    print("Invalid query:", key)
-                    return False
-        if key in ["join", "values"]:
-            if value is not None:
-                third_clause = value[1]
-                if third_clause < second_clause:
-                    print("Invalid query:", key)
-                    return False
-        if key in ["using", "on", "order by"]:
-            if value is not None:
-                fourth_clause = value[1]
-                if fourth_clause < third_clause:
-                    print("Invalid query:", key)
-                    return False
-        if key in ["where"]:
-            if value is not None:
-                fifth_clause = value[1]
-                if fifth_clause < fourth_clause:
-                    print("Invalid query:", key)
-                    return False
-        if key in ["and", "or"]:
-            if value is not None:
-                sixth_clause = value[1]
-                if sixth_clause < fifth_clause:
-                    print("Invalid query:", key)
-                    return False
+    # Verifica se todos os comandos obrigatórios foram preenchidos
+    required_commands = ["select", "update", "insert", "delete"]
+    if not any(commands[cmd] is not None for cmd in required_commands):
+        return False
+
+    # Verifica a estrutura básica da consulta
+    if commands["select"]:
+        if not commands["from"] or commands["select"][1] > commands["from"][1]:
+            return False
+    elif commands["update"]:
+        if not commands["set"] or not commands["where"] or commands["update"][1] > commands["set"][1] or \
+                commands["set"][1] > commands["where"][1]:
+            return False
+    elif commands["insert"]:
+        if not commands["into"] or not commands["values"] or commands["insert"][1] > commands["into"][1] or \
+                commands["into"][1] > commands["values"][1]:
+            return False
+    elif commands["delete"]:
+        if not commands["from"] or not commands["where"] or commands["delete"][1] > commands["from"][1] or \
+                commands["from"][1] > commands["where"][1]:
+            return False
+
     return True
 
 # splits the query with it's respectively statements
@@ -409,6 +389,7 @@ def parser(query: str):
             _delete()
 
     else:
+        print("Error : Invalid Query")
         return False
         
 
