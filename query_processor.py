@@ -11,12 +11,10 @@ commands = {}
 def write_csv(table: str, cursor, colum_names: list, schema: str) -> bool:
     path_for_file = catch_table_path(table, schema)
     table_data = []
-    tables_data = {}  # Dicionário de tabelas(listas) = Nosso banco de dados
 
     for row in cursor:
         table_data.append(row)
 
-    tables_data[table] = table_data
     # headers = cursor.column_names
 
     with open(path_for_file, "w", newline="") as csvfile:
@@ -126,14 +124,29 @@ def _from():
     data = []
 
     try:
-        table_from = tuple_value(commands["from"])
-        data_from = data_from_table(table_from, schema)
-        data = data_from
+        if commands["from"]:
+            table_from = tuple_value(commands["from"])
+            data_from = data_from_table(table_from, schema)
+            data = data_from
 
-        if tuple_value(commands["join"]) != None:
-            table_join = tuple_value(commands["join"])
-            data_join = data_from_table(table_join, schema)
-            data = _join(data_from, data_join)
+            if tuple_value(commands["join"]) != None:
+                table_join = tuple_value(commands["join"])
+                data_join = data_from_table(table_join, schema)
+                data = _join(data_from, data_join)
+
+        elif commands["into"]:
+            table_into = tuple_value(commands["into"])
+            data_into = data_from_table(table_into, schema)
+            data = data_into 
+
+        elif commands["update"]:
+            table_update = tuple_value(commands["update"])
+            data_update = data_from_table(table_update, schema)
+            data = data_update 
+
+        else:
+            print("Error : Wrong arguments in tables fetch")
+            return False
 
         return data
 
@@ -285,8 +298,53 @@ def _update():
     return
 
 
-def _insert():
-    return
+def _insert(data:list):
+    try:
+        values = tuple_value(commands["values"])
+        values = values.strip(')')
+        values = values.strip('(')
+
+        values = values.split(',')
+        headers = list(data[0])
+        #verifie if the amount of arguments passed to values is right
+        if len(headers) != len(values):
+            print("Error : Wrong arguments near {}".format(tuple_value(commands["values"])))
+            return False
+        
+        values = dict(zip(headers,values)) #transform values in a dictionary to be inserted
+
+        #verifies the type of inserted value before insert
+        if len(data) > 0:
+            for key in data[0]:
+                if data[0][key].isnumeric():
+                    if values[key].isnumeric():
+                        continue
+                    else:
+                        print("Error : Value types didn't match")
+                        return False
+                elif data[0][key].isalpha():
+                    if values[key].isalpha():
+                        continue
+                    else:
+                        print("Error : Value types didn't match")
+                        return False
+                else:
+                    print("Unexpected error near {}".format(tuple_value(commands["values"])))
+                    return False
+        
+        data.append(values) #insert item
+
+        table = tuple_value(commands["into"])
+        if check_existing_table(table,schema):
+            write_csv(table,data,headers,schema)
+        else:
+            print("Error : Wrong arguments near {}".format(table))
+            return False
+
+        return True
+    except:
+        print("Error : Wrong arguments near {}".format(tuple_value(commands["values"])))
+        return False
 
 
 def _delete():
@@ -389,7 +447,8 @@ def parser(query: str):
             # TODO
         elif "insert" in query_list:
             i = query_list.index("values")
-            # TODO
+            values = query_list[i + 1]
+            commands["values"] = values,i
         elif "delete" in query_list:
             i = query_list.index()
             # TODO
@@ -427,8 +486,8 @@ def parser(query: str):
         _select(data)
     elif tuple_value(commands["update"]):
         _update()
-    elif tuple_value(commands["insert"]):
-        _insert()
+    elif tuple_value(commands["into"]):
+        _insert(data)
     elif tuple_value(commands["delete"]):
         _delete()
     
