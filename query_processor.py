@@ -4,7 +4,6 @@ import postgres_handler
 import os
 
 schema = None
-
 commands = {}
 
 
@@ -347,8 +346,26 @@ def _insert(data:list):
         return False
 
 
-def _delete():
-    return
+def _delete(data:list):
+
+    try:
+        table = tuple_value(commands["from"])
+
+        data_filtered = _where(data)
+        headers = list(data[0])
+
+        if data_filtered == data:
+            data.clear()
+        else:
+            for item in data_filtered:
+                data.remove(item)
+              
+        write_csv(table,data,headers,schema)
+        return True
+    except:
+        #No data for delete, so do nothing
+        return False
+
 
 
 # splits the query with it's respectively statements
@@ -450,8 +467,9 @@ def parser(query: str):
             values = query_list[i + 1]
             commands["values"] = values,i
         elif "delete" in query_list:
-            i = query_list.index()
-            # TODO
+            i = query_list.index("from")
+            delete = ' '
+            commands["delete"] = delete,i
         else:
             print("Error : unexpected")
             return False
@@ -461,6 +479,7 @@ def parser(query: str):
             i = query_list.index("where")
             clause = query_list[i + 1]
             commands["where"] = clause, i
+
         # catch and or statement
         if "and" in query_list:
             i = query_list.index("and")
@@ -470,26 +489,27 @@ def parser(query: str):
             i = query_list.index("or")
             clause = query_list[i + 1]
             commands["or"] = clause, i
+
         # catch order by
         if "orderby" in query_list:
             i = query_list.index("orderby")
             clause = query_list[i + 1]
             commands["order by"] = clause, i
 
+        data = _from()
+
+        if tuple_value(commands["select"]):
+            _select(data)
+        elif tuple_value(commands["delete"]):
+            _delete(data)
+        elif tuple_value(commands["into"]):
+            _insert(data)
+        elif tuple_value(commands["update"]):
+            _update()
+    
     except:
         print("Error : Invalid query")
         return False
-
-    data = _from()
-
-    if tuple_value(commands["select"]):
-        _select(data)
-    elif tuple_value(commands["update"]):
-        _update()
-    elif tuple_value(commands["into"]):
-        _insert(data)
-    elif tuple_value(commands["delete"]):
-        _delete()
     
 
 
