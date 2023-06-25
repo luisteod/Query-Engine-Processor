@@ -1,6 +1,7 @@
 import csv
 import mysql_handler
 import postgres_handler
+import csv_import
 import os
 
 schema = None
@@ -588,14 +589,16 @@ def create_schema(schema):
 
 
 def data_import():
-    server = None
-    while not (server == "mysql" or server == "postgres"):
-        print("Select the server (mysql or postgres)")
-        server = input(">> ")
-    if server == "mysql":
+    option = None
+    while not (option == "mysql" or option == "postgres" or option == "csv"):
+        print("Select csv or server (mysql or postgres)")
+        option = input(">> ")
+    if option == "mysql":
         mysql_handler.mysqlimport()
-    elif server == "postgres":
+    elif option == "postgres":
         postgres_handler.postgresimport()
+    elif option == "csv":
+        csv_import.csv_import()
     return
 
 
@@ -641,16 +644,18 @@ def query():
 def main():
     # takes query from user
     answer = None
-    while not (answer == "i" or answer == "q"):
-        print("Import or query? (i/q)")
+    while not (answer == "i" or answer == "q" or answer == "e"):
+        print("Import, query or exit? (i/q/e)")
         answer = input(">> ")
-        print()
     if answer == "i":
         data_import()
-    else:
+    elif answer == "q":
         query()
+    elif answer == "e":
+        return False
+    else:
+        return
 
 
 if __name__ == "__main__":
-    while True:
-        main()
+    main()
