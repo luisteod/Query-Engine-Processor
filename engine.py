@@ -414,7 +414,33 @@ def _delete(data:list):
         #No data for delete, so do nothing
         return False
 
+#verify if typed query has clauses in correct positioning
+def is_query_valid() -> bool:
+    global commands
 
+    # Verifica se todos os comandos obrigatórios foram preenchidos
+    required_commands = ["select", "update", "insert", "delete"]
+    if not any(commands[cmd] is not None for cmd in required_commands):
+        return False
+
+    # Verifica a estrutura básica da consulta
+    if commands["select"]:
+        if not commands["from"] or commands["select"][1] > commands["from"][1]:
+            return False
+    elif commands["update"]:
+        if not commands["set"] or not commands["where"] or commands["update"][1] > commands["set"][1] or \
+                commands["set"][1] > commands["where"][1]:
+            return False
+    elif commands["insert"]:
+        if not commands["into"] or not commands["values"] or commands["insert"][1] > commands["into"][1] or \
+                commands["into"][1] > commands["values"][1]:
+            return False
+    elif commands["delete"]:
+        if not commands["from"] or not commands["where"] or commands["delete"][1] > commands["from"][1] or \
+                commands["from"][1] > commands["where"][1]:
+            return False
+
+    return True
 
 # splits the query with it's respectively statements
 # and treat accordingly
@@ -545,22 +571,25 @@ def parser(query: str):
             clause = query_list[i + 1]
             commands["order by"] = clause, i
 
-        data = _from()
+        if(is_query_valid()):
+            data = _from()
 
-        if tuple_value(commands["select"]):
-            _select(data)
-        elif tuple_value(commands["delete"]):
-            _delete(data)
-        elif tuple_value(commands["into"]):
-            _insert(data)
-        elif tuple_value(commands["update"]):
-            _update(data)
-    
+            if tuple_value(commands["select"]):
+                _select(data)
+            elif tuple_value(commands["delete"]):
+                _delete(data)
+            elif tuple_value(commands["into"]):
+                _insert(data)
+            elif tuple_value(commands["update"]):
+                _update(data)
+
+        else:
+            print("Error : Invalid query")
+            return False
+
     except:
         print("Error : Invalid query")
         return False
-    
-
 
 def check_existing_table(table: str, schema: str):
     path = catch_table_path(table, schema)
