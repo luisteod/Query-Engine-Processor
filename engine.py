@@ -126,11 +126,13 @@ def _from():
         if commands["from"]:
             table_from = tuple_value(commands["from"])
             data_from = data_from_table(table_from, schema)
+            data_from = _where(data_from) #filter aplication
             data = data_from
 
             if tuple_value(commands["join"]) != None:
                 table_join = tuple_value(commands["join"])
                 data_join = data_from_table(table_join, schema)
+                data_join = _where(data_join)
                 data = _join(data_from, data_join)
 
         elif commands["into"]:
@@ -245,10 +247,23 @@ def _orderby(data:list):
     else:
         return data
 
+def print_results(data):
+    try:
+        headers = list(data[0])
+        max_lengths = [max(len(str(row[field])) for row in data) for field in headers]
+        for i, header in enumerate(headers):
+            print(f"{header:<{max_lengths[i]}}", end=" ")
+        print()
+
+        for row in data:
+            for i, header in enumerate(headers):
+                print(f"{row[header]:<{max_lengths[i]}}", end=" ")
+            print()
+    except:
+        return False
+
 def _select(data: list):
 
-    #filters aplication
-    data = _where(data)
     data = _orderby(data)
 
     columns = tuple_value(commands["select"])
@@ -256,6 +271,7 @@ def _select(data: list):
     if columns != None:
         try:
             if columns == "*":
+                # print_results(headers,data)
                 headers = list(data[0])
                 print(headers)
                 for row in data:
@@ -278,11 +294,12 @@ def _select(data: list):
                 print(headers)
 
                 for row in data:
-                    printable = []
-                    for key in iter(row):
-                        if key in headers:
-                            printable.append(row[key])
-                    print(printable)
+                    # printable = []
+                    # for key in iter(row):
+                    #     if key in headers:
+                    #         printable.append(row[key])
+                    # print(printable)
+                    print(row)
 
                 return True
         except:
