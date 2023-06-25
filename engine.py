@@ -293,7 +293,12 @@ def _select(data: list):
         return False
 
 
-def _update():
+def _update(data:list):
+
+    try:
+    
+    except:
+        return False
     return
 
 
@@ -505,7 +510,7 @@ def parser(query: str):
         elif tuple_value(commands["into"]):
             _insert(data)
         elif tuple_value(commands["update"]):
-            _update()
+            _update(data)
     
     except:
         print("Error : Invalid query")
@@ -582,7 +587,7 @@ def query():
                     print("re-type query? (y/n)")
                     retype_query = input(">> ")
             else:
-                print("error : Schema not found in query_processor server")
+                print("error : Schema not found in engine server")
         elif retype == "n":
             return True
         print("re-type schema ? (y/n)")

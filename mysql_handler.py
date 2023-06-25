@@ -1,6 +1,6 @@
 import mysql.connector
 import csv
-import query_processor
+import engine
 
 host_glob = 'localhost'
 user_glob = 'root'
@@ -57,7 +57,7 @@ def mysqlimport():
             print('Type the table to import : ')
             table = input('>> ')   
 
-    if not query_processor.check_existing_schema(schema=database_glob) : 
+    if not engine.check_existing_schema(schema=database_glob) : 
 
         create_folder = None
         while not(create_folder == 'y' or create_folder == 'n') :
@@ -65,24 +65,24 @@ def mysqlimport():
             create_folder = input('>> ')
         
         if create_folder=='y' :
-            query_processor.create_schema(schema=database_glob)
+            engine.create_schema(schema=database_glob)
         else :
             return True
         
-    if query_processor.check_existing_table(table,schema=database_glob) :
+    if engine.check_existing_table(table,schema=database_glob) :
         overwrite = None
         while not(overwrite == 'y' or overwrite =='n'):
             print('Table already exists, do you wanna overwrite ? (y/n)')
             overwrite = input('>> ')
         if overwrite == 'y':
             headers = cursor.column_names
-            query_processor.write_csv(table,cursor,headers,schema=database_glob)
+            engine.write_csv(table,cursor,headers,schema=database_glob)
         elif overwrite == 'n':
             return True
     else : 
         #create a new file with the name of table
         headers = cursor.column_names
-        query_processor.write_csv(table,cursor,headers,schema=database_glob)
+        engine.write_csv(table,cursor,headers,schema=database_glob)
             
     
     cursor.close()
