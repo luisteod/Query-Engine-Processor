@@ -4,8 +4,6 @@ import postgres_handler
 import os
 
 schema = None
-table_path = None
-join_table_path = None
 
 commands = {}
 
@@ -26,8 +24,9 @@ def write_csv(table: str, cursor, colum_names: list, schema: str) -> bool:
         writer.writeheader()
         writer.writerows(table_data)
 
-#returns a list of a dict with keys as column name of a csv file
-def read_csv(table_path:str) -> list:
+
+# returns a list of a dict with keys as column name of a csv file
+def read_csv(table_path: str) -> list:
     with open(table_path, newline="") as csvfile:
         reader = csv.DictReader(csvfile)
         data = []
@@ -35,44 +34,55 @@ def read_csv(table_path:str) -> list:
             data.append(row)
         return data
 
-def data_from_table(table,schema)->list:
-    if check_existing_table(table,schema):
-        table_path = catch_table_path(table,schema)
+
+def data_from_table(table, schema) -> list:
+    if check_existing_table(table, schema):
+        table_path = catch_table_path(table, schema)
         data = read_csv(table_path=table_path)
         return data
 
 
-def tuple_value(data:tuple) -> str:
+def tuple_value(data: tuple) -> str:
     if data != None:
         return data[0]
     else:
         return None
 
-def _join(data1:list,data2:list):
 
+def _join(data1: list, data2: list):
     result = []
 
     if tuple_value(commands["on"]) != None:
         try:
             on_value = tuple_value(commands["on"])
-            on_value = on_value.split('=')
+            # remove ()
+            on_value = on_value.strip("(")
+            on_value = on_value.strip(")")
 
-            command_for_table_1 = on_value[0].split('.')
-            command_for_table_2 = on_value[1].split('.')
-            
+            on_value = on_value.split("=")
+
+            command_for_table_1 = on_value[0].split(".")
+            command_for_table_2 = on_value[1].split(".")
+
             name_table_1 = command_for_table_1[0]
             column_table_1 = command_for_table_1[1]
 
             name_table_2 = command_for_table_2[0]
             column_table_2 = command_for_table_2[1]
 
-            if tuple_value(commands["from"]) == name_table_1 and tuple_value(commands["join"]) == name_table_2:
+            if (
+                tuple_value(commands["from"]) == name_table_1
+                and tuple_value(commands["join"]) == name_table_2
+            ):
                 for item1 in data1:
                     for item2 in data2:
                         if item1[column_table_1] == item2[column_table_2]:
                             result.append({**item1, **item2})
                 return result
-            elif tuple_value(commands["from"]) == name_table_2 and tuple_value(commands["join"]) == name_table_1:
+            elif (
+                tuple_value(commands["from"]) == name_table_2
+                and tuple_value(commands["join"]) == name_table_1
+            ):
                 for item1 in data1:
                     for item2 in data2:
                         if item1[column_table_2] == item2[column_table_1]:
@@ -85,24 +95,25 @@ def _join(data1:list,data2:list):
         except:
             print("Error : Wrong argument near {}".format(on_value))
             return False
-    
+
     elif tuple_value(commands["using"]) != None:
- 
         try:
             using_value = tuple_value(commands["using"])
+            using_value = using_value.strip(")")
+            using_value = using_value.strip("(")
             column = using_value
 
             for item1 in data1:
                 for item2 in data2:
                     if item1[column] == item2[column]:
-                        #item2.pop(column) #removes equal column
+                        # item2.pop(column) #removes equal column
                         result.append({**item1, **item2})
             return result
-        
+
         except:
             print("Error : Wrong argument near {}".format(using_value))
             return False
-    
+
     else:
         print("Error : Wrong argument near join")
         return False
@@ -116,110 +127,141 @@ def _from():
 
     try:
         table_from = tuple_value(commands["from"])
-        data_from = data_from_table(table_from,schema)
+        data_from = data_from_table(table_from, schema)
         data = data_from
 
         if tuple_value(commands["join"]) != None:
             table_join = tuple_value(commands["join"])
-            data_join = data_from_table(table_join,schema)
-            data = _join(data_from,data_join)
-    
+            data_join = data_from_table(table_join, schema)
+            data = _join(data_from, data_join)
+
         return data
-    
+
     except:
         print("Error : Wrong arguments near {}".format(table_from))
         return False
 
-def _where(data):
-    
-    try:
 
-        if tuple_value(commands["and"] != None):
-            word_cond1 = tuple_value(commands["where"])
-            word_cond2 = tuple_value(commands["and"]) #catch value passed after AND statement
-            filtered_data = [row for row in data if condition_func(word_cond1,row) and condition_func(word_cond2,row)] #here using list comprehensions
-        elif tuple_value(commands["or"] != None):
-            word_cond1 = tuple_value(commands["where"])
-            word_cond2 = tuple_value(commands["or"]) #catch value passed after OR statement
-            filtered_data = [row for row in data if condition_func(word_cond1,row) or condition_func(word_cond2,row)]
+def _where(data):
+    try:
+        if tuple_value(commands["where"]) == None:
+            return data
         else:
-            word_cond = tuple_value(commands["where"])
-            filtered_data = [row for row in data if condition_func(word_cond,row)]
-        
-        return filtered_data
-    
+            if tuple_value(commands["and"]) != None:
+                word_cond1 = tuple_value(commands["where"])
+                word_cond2 = tuple_value(
+                    commands["and"]
+                )  # catch value passed after AND statement
+                filtered_data = [
+                    row
+                    for row in data
+                    if condition_func(word_cond1, row)
+                    and condition_func(word_cond2, row)
+                ]  # here using list comprehensions
+            elif tuple_value(commands["or"]) != None:
+                word_cond1 = tuple_value(commands["where"])
+                word_cond2 = tuple_value(
+                    commands["or"]
+                )  # catch value passed after OR statement
+                filtered_data = [
+                    row
+                    for row in data
+                    if condition_func(word_cond1, row)
+                    or condition_func(word_cond2, row)
+                ]
+            else:
+                word_cond = tuple_value(commands["where"])
+                filtered_data = [row for row in data if condition_func(word_cond, row)]
+
+            return filtered_data
+
     except:
         print("Error : Wrong argument near {}".format(tuple_value(commands["where"])))
         return False
 
 
-
-def condition_func(condition,row):
-
-    if condition.find('=') and (not(condition.find('>') or condition.find('<'))):
-        aux = condition.split('=')
+def condition_func(condition, row):
+    if condition.find("=") != -1 and (
+        condition.find(">") == -1 and condition.find("<") == -1
+    ):
+        aux = condition.split("=")
         left = aux[0]
         right = aux[1]
-        
+
         return row[left] == right
-        
-    elif condition.find('>') and (not condition.find('=')):
-        aux = condition.split('>')
+
+    elif condition.find(">") != -1 and condition.find("=") == -1:
+        aux = condition.split(">")
         left = aux[0]
         right = aux[1]
 
-        return row[left] > right
-    
-    elif condition.find('<') and (not condition.find('=')):
-        aux = condition.split('<')
+        return int(row[left]) > int(right)
+
+    elif condition.find("<") != -1 and condition.find("=") == -1:
+        aux = condition.split("<")
         left = aux[0]
         right = aux[1]
 
-        return row[left] < right
-    
-    elif condition.find('>') and condition.find('='):
-        aux = condition.split('>=')
+        return int(row[left]) < int(right)
+
+    elif condition.find(">") != -1 and condition.find("=") != -1:
+        aux = condition.split(">=")
         left = aux[0]
         right = aux[1]
 
-        return row[left] >= right
-    
-    elif condition.find('<') and condition.find('='):
-        aux = condition.split('<=')
+        return int(row[left]) >= int(right)
+
+    elif condition.find("<") != -1 and condition.find("=") != -1:
+        aux = condition.split("<=")
         left = aux[0]
         right = aux[1]
 
-        return row[left] <= right
+        return int(row[left]) <= int(right)
     else:
         print("Error : Wrong arguments near {}".format(condition))
         return False
 
+def _orderby(data:list):
+    clause = tuple_value(commands["order by"])
+    if clause != None:
+        if clause in data[0]:
+            data.sort(key=lambda x:int(x[clause]))
+            return data
+        else:
+            print("Error: Wrong arguments near {}".format(clause))
+            return False
+    else:
+        return data
 
-def _select(data:list):
+def _select(data: list):
+
+    #filters aplication
+    data = _where(data)
+    data = _orderby(data)
 
     columns = tuple_value(commands["select"])
 
     if columns != None:
         try:
-            if columns == '*':
+            if columns == "*":
                 headers = list(data[0])
                 print(headers)
                 for row in data:
-                    printable = []  
+                    printable = []
                     for key in iter(row):
                         printable.append(row[key])
                     print(printable)
 
                 return True
             else:
-                columns = columns.split(',')
+                columns = columns.split(",")
 
-                #verifies if a columns typed is in the table
+                # verifies if a columns typed is in the table
                 for input_key in columns:
                     if input_key not in data[0]:
                         print("Error : {} didn't exists".format(input_key))
                         return False
-                    
+
                 headers = columns
                 print(headers)
 
@@ -229,21 +271,23 @@ def _select(data:list):
                         if key in headers:
                             printable.append(row[key])
                     print(printable)
-                
+
                 return True
         except:
-            print("Error : Wrong argument near {}".format(columns))
+            #No data printed, so do nothing
             return False
     else:
         print("Error : Wrong argument near SELECT")
         return False
-    
+
 
 def _update():
     return
 
+
 def _insert():
     return
+
 
 def _delete():
     return
@@ -252,102 +296,131 @@ def _delete():
 # splits the query with it's respectively statements
 # and treat accordingly
 def parser(query: str):
-
     global commands
 
     commands = {
+        "select": None,
+        "update": None,
+        "set": None,
+        "insert": None,
+        "delete": None,
+        "into": None,
+        "values": None,
+        "from": None,
+        "join": None,
+        "on": None,
+        "using": None,
+        "where": None,
+        "and": None,
+        "or": None,
+        "order by": None,
+    }
+    try:
+        query = query.replace(", ", ",")
+        query = query.replace(" ,", ",")
+        query = query.replace(" =", "=")
+        query = query.replace("= ", "=")
+        query = query.replace(" >=",">=")
+        query = query.replace(">= ",">=")
+        query = query.replace(" <=","<=")
+        query = query.replace("<= ","<=")
+        query = query.replace(" >",">")
+        query = query.replace("> ",">")
+        query = query.replace(" <","<")
+        query = query.replace("< ","<")
+        query = query.replace("order by", "orderby")
 
-    "select": (None),
-    "update": (None),
-    "set" : (None),
-    "insert": (None),
-    "delete":(None),
-    "into" : (None),
-    "values": (None),
-    "from": (None),
-    "join": (None),
-    "on" : (None),
-    "using" : (None),
-    "where": (None),
-    "and": (None),
-    "or": (None),
-    "order by": (None),
-}
-    
-    query = query.replace(", ", ",")
-    query = query.replace(" ,", ",")
-    query = query.replace(" =","=")
-    query = query.replace("= ","=")
+        # splits sql command using space as separator
+        query_list = query.split()
 
-    # splits sql command using space as separator
-    query_list = query.split()
-
-    #extract table in query
-    if "from" in query_list:
-        i = query_list.index("from")
-        table = query_list[i+1]
-        commands["from"] = table,i
-        #extract join argument
-        if "join" in query_list:
-            i = query_list.index("join")
-            join_table = query_list[i+1]
-            commands["join"] = join_table,i
-            if join_table in commands:
-                print("Error : Wrong argument near {}".format(join_table))
-                return False
-            if "on" in query_list:
-                i = query_list.index("on")
-                join_column = query_list[i+1]
-                commands["on"] = join_column,i
-                if join_column in commands:
-                    print("Error : Wrong argument near {}".format(join_column))
+        # extract table in query
+        if "from" in query_list:
+            i = query_list.index("from")
+            table = query_list[i + 1]
+            commands["from"] = table, i
+            # extract join argument
+            if "join" in query_list:
+                i = query_list.index("join")
+                join_table = query_list[i + 1]
+                commands["join"] = join_table, i
+                if join_table in commands:
+                    print("Error : Wrong argument near {}".format(join_table))
                     return False
-            elif "using" in query_list:
-                i = query_list.index("using")
-                join_column = query_list[i+1]
-                commands["using"] = join_column,i
-                if join_column in commands:
-                    print("Error : Wrong arguments near {}".format(join_column))
+                if "on" in query_list:
+                    i = query_list.index("on")
+                    join_column = query_list[i + 1]
+                    commands["on"] = join_column, i
+                    if join_column in commands:
+                        print("Error : Wrong argument near {}".format(join_column))
+                        return False
+                elif "using" in query_list:
+                    i = query_list.index("using")
+                    join_column = query_list[i + 1]
+                    commands["using"] = join_column, i
+                    if join_column in commands:
+                        print("Error : Wrong arguments near {}".format(join_column))
+                        return False
+                else:
+                    print("Error : Wrong argument near  {}".format(join_table))
                     return False
-            else:
-                print("Error : Wrong argument near  {}".format(join_table))
-                return False        
-    elif "update" in query_list:
-        i = query_list.index("update")
-        table = query_list[i+1]
-        commands["update"] = table,i
-    elif "into" in query_list:
-        i = query_list.index("into")
-        table = query_list[i+1]
-        commands["into"] = table,i
-    else:
-        print("Error : Wrong argument near {}".format(table))
-        return 0
-    
-    #verification if arguments is part of commands
-    if table in commands:
-        print("Error : wrong argument {}".format(table))
-        return 0
+        elif "update" in query_list:
+            i = query_list.index("update")
+            table = query_list[i + 1]
+            commands["update"] = table, i
+        elif "into" in query_list:
+            i = query_list.index("into")
+            table = query_list[i + 1]
+            commands["into"] = table, i
+        else:
+            print("Error : Wrong argument near {}".format(table))
+            return 0
 
+        # verification if arguments is part of commands
+        if table in commands:
+            print("Error : wrong argument {}".format(table))
+            return 0
 
-    if "select" in query_list:
-        i = query_list.index("select")
-        # Take argument for select
-        columns = query_list[i + 1]
-        commands["select"] = columns,i
-    elif "update" in query_list:
-        i = query_list.index("set")
-        #TODO
-    elif "insert" in query_list:
-        i = query_list.index("values")
-        #TODO
-    elif "delete" in query_list:
-        i = query_list.index()
-        #TODO
-    else:
-        print("Error : unexpected")
+        if "select" in query_list:
+            i = query_list.index("select")
+            columns = query_list[i + 1]
+            commands["select"] = columns, i
+        elif "update" in query_list:
+            i = query_list.index("set")
+            # TODO
+        elif "insert" in query_list:
+            i = query_list.index("values")
+            # TODO
+        elif "delete" in query_list:
+            i = query_list.index()
+            # TODO
+        else:
+            print("Error : unexpected")
+            return False
+
+        # catch where statement
+        if "where" in query_list:
+            i = query_list.index("where")
+            clause = query_list[i + 1]
+            commands["where"] = clause, i
+        # catch and or statement
+        if "and" in query_list:
+            i = query_list.index("and")
+            clause = query_list[i + 1]
+            commands["and"] = clause, i
+        elif "or" in query_list:
+            i = query_list.index("or")
+            clause = query_list[i + 1]
+            commands["or"] = clause, i
+        # catch order by
+        if "orderby" in query_list:
+            i = query_list.index("orderby")
+            clause = query_list[i + 1]
+            commands["order by"] = clause, i
+
+    except:
+        print("Error : Invalid query")
         return False
-    
+
     data = _from()
 
     if tuple_value(commands["select"]):
@@ -358,14 +431,15 @@ def parser(query: str):
         _insert()
     elif tuple_value(commands["delete"]):
         _delete()
-        
+    
 
-def check_existing_table(table: str, schema:str):
+
+def check_existing_table(table: str, schema: str):
     path = catch_table_path(table, schema)
     return os.path.exists(path)
 
 
-def catch_table_path(table: str, schema:str):
+def catch_table_path(table: str, schema: str):
     path = (catch_schema_path(schema) + "/tables/{}.csv").format(table)
     return path
 
@@ -398,17 +472,43 @@ def data_import():
     return
 
 
+def list_schemas():
+    files = os.listdir(os.getcwd() + "/schemas")
+    for it in files:
+        printable = it.strip(".csv")
+        print("@ " + printable)
+
+
 def query():
     global schema
 
-    print("Select schema :")
-    schema = input(">> ")
-    if check_existing_schema(schema):
-        print("Type query : ")
-        query = input(">> ")
-        parser(query)
-    else:
-        print("error : Schema not found in query_processor server")
+    retype = "y"
+    while retype != "y" or retype != "n":
+        if retype == "y":
+            print("Select schema :")
+            list_schemas()
+            print()
+            schema = input(">> ")
+            print()
+            if check_existing_schema(schema):
+                retype_query = "y"
+                while retype_query != "y" or retype_query != "n":
+                    if retype_query == "y":
+                        print("Type query : ")
+                        query = input(">> ")
+                        print()
+                        parser(query)
+                    elif retype_query == "n":
+                        return True
+                    print("re-type query? (y/n)")
+                    retype_query = input(">> ")
+            else:
+                print("error : Schema not found in query_processor server")
+        elif retype == "n":
+            return True
+        print("re-type schema ? (y/n)")
+        retype = input(">> ")
+    return True
 
 
 def main():
@@ -417,6 +517,7 @@ def main():
     while not (answer == "i" or answer == "q"):
         print("Import or query? (i/q)")
         answer = input(">> ")
+        print()
     if answer == "i":
         data_import()
     else:
