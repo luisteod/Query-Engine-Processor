@@ -154,7 +154,7 @@ def _from():
         return False
 
 
-def _where(data):
+def _where(data:list):
     try:
         if tuple_value(commands["where"]) == None:
             return data
@@ -296,10 +296,52 @@ def _select(data: list):
 def _update(data:list):
 
     try:
-    
+        set = tuple_value(commands["set"])
+        if set == None:
+            return False #No data
+        
+        set = set.strip(')')
+        set = set.strip('(')
+
+        set = set.split(',')
+
+        table = tuple_value(commands["update"])
+
+        data_filtered = list(_where(data))        
+        data_updated = list(data_filtered)
+        headers = list(data[0])
+
+        if data_filtered[0] != None:
+            if set != None:
+                for item in data_updated:
+                    for args in set:
+                        args = args.split('=')
+                        left = args[0]
+                        right = args[1]
+                        if left in data_filtered[0]:
+                            if right.isnumeric() or right.isalpha():
+                                item[left] = right
+                            else:
+                                print("Update with operations in right side of '=' not implemented")
+                                return False
+                        else:
+                            print("Error : Wrong arguments near {}".format(tuple_value(commands["set"])))
+                            return False
+            else:
+                return False #No data
+        else:
+            return False #No data
+
+        for item1,item2 in zip(data_filtered,data_updated):
+            data.remove(item1)
+            data.append(item2)
+        
+        write_csv(table,data,headers,schema)
+        return True
+
     except:
         return False
-    return
+    
 
 
 def _insert(data:list):
@@ -466,7 +508,8 @@ def parser(query: str):
             commands["select"] = columns, i
         elif "update" in query_list:
             i = query_list.index("set")
-            # TODO
+            set = query_list[i+1]
+            commands["set"] = set,i
         elif "insert" in query_list:
             i = query_list.index("values")
             values = query_list[i + 1]
