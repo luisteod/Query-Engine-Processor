@@ -46,6 +46,23 @@ def tuple_value(data: tuple) -> str:
         return None
 
 
+def hash(data1, column_table_1, data2, column_table_2):
+    index = {}
+    for row in data1:
+        key = row[column_table_1]
+        index.setdefault(key, []).append(row)
+
+    result = []
+    for row in data2:
+        key = row[column_table_2]
+        if key in index:
+            for valid_row in index[key]:
+                merged_row = {**row, **valid_row}
+                result.append(merged_row)
+
+    return result
+
+
 def _join(data1: list, data2: list):
     result = []
 
@@ -70,21 +87,12 @@ def _join(data1: list, data2: list):
             if (
                 tuple_value(commands["from"]) == name_table_1
                 and tuple_value(commands["join"]) == name_table_2
-            ):
-                for item1 in data1:
-                    for item2 in data2:
-                        if item1[column_table_1] == item2[column_table_2]:
-                            result.append({**item1, **item2})
-                return result
-            elif (
+            ) or (
                 tuple_value(commands["from"]) == name_table_2
                 and tuple_value(commands["join"]) == name_table_1
             ):
-                for item1 in data1:
-                    for item2 in data2:
-                        if item1[column_table_2] == item2[column_table_1]:
-                            result.append({**item1, **item2})
-                return result
+                return hash(data1, column_table_1, data2, column_table_2)
+
             else:
                 print("Error : Wrong arguments near {}".format(on_value))
                 return False
@@ -100,12 +108,7 @@ def _join(data1: list, data2: list):
             using_value = using_value.strip("(")
             column = using_value
 
-            for item1 in data1:
-                for item2 in data2:
-                    if item1[column] == item2[column]:
-                        # item2.pop(column) #removes equal column
-                        result.append({**item1, **item2})
-            return result
+            return hash(data1, column, data2, column)
 
         except:
             print("Error : Wrong argument near {}".format(using_value))
@@ -136,12 +139,12 @@ def _from():
         elif commands["into"]:
             table_into = tuple_value(commands["into"])
             data_into = data_from_table(table_into, schema)
-            data = data_into 
+            data = data_into
 
         elif commands["update"]:
             table_update = tuple_value(commands["update"])
             data_update = data_from_table(table_update, schema)
-            data = data_update 
+            data = data_update
 
         else:
             print("Error : Wrong arguments in tables fetch")
@@ -154,7 +157,7 @@ def _from():
         return False
 
 
-def _where(data:list):
+def _where(data: list):
     try:
         if tuple_value(commands["where"]) == None:
             return data
@@ -233,11 +236,12 @@ def condition_func(condition, row):
         print("Error : Wrong arguments near {}".format(condition))
         return False
 
-def _orderby(data:list):
+
+def _orderby(data: list):
     clause = tuple_value(commands["order by"])
     if clause != None:
         if clause in data[0]:
-            data.sort(key=lambda x:int(x[clause]))
+            data.sort(key=lambda x: int(x[clause]))
             return data
         else:
             print("Error: Wrong arguments near {}".format(clause))
@@ -245,9 +249,9 @@ def _orderby(data:list):
     else:
         return data
 
-def _select(data: list):
 
-    #filters aplication
+def _select(data: list):
+    # filters aplication
     data = _where(data)
     data = _orderby(data)
 
@@ -286,28 +290,27 @@ def _select(data: list):
 
                 return True
         except:
-            #No data printed, so do nothing
+            # No data printed, so do nothing
             return False
     else:
         print("Error : Wrong argument near SELECT")
         return False
 
 
-def _update(data:list):
-
+def _update(data: list):
     try:
         set = tuple_value(commands["set"])
         if set == None:
-            return False #No data
-        
-        set = set.strip(')')
-        set = set.strip('(')
+            return False  # No data
 
-        set = set.split(',')
+        set = set.strip(")")
+        set = set.strip("(")
+
+        set = set.split(",")
 
         table = tuple_value(commands["update"])
 
-        data_filtered = list(_where(data))        
+        data_filtered = list(_where(data))
         data_updated = list(data_filtered)
         headers = list(data[0])
 
@@ -315,51 +318,62 @@ def _update(data:list):
             if set != None:
                 for item in data_updated:
                     for args in set:
-                        args = args.split('=')
+                        args = args.split("=")
                         left = args[0]
                         right = args[1]
                         if left in data_filtered[0]:
                             if right.isnumeric() or right.isalpha():
                                 item[left] = right
                             else:
-                                print("Update with operations in right side of '=' not implemented")
+                                print(
+                                    "Update with operations in right side of '=' not implemented"
+                                )
                                 return False
                         else:
-                            print("Error : Wrong arguments near {}".format(tuple_value(commands["set"])))
+                            print(
+                                "Error : Wrong arguments near {}".format(
+                                    tuple_value(commands["set"])
+                                )
+                            )
                             return False
             else:
-                return False #No data
+                return False  # No data
         else:
-            return False #No data
+            return False  # No data
 
-        for item1,item2 in zip(data_filtered,data_updated):
+        for item1, item2 in zip(data_filtered, data_updated):
             data.remove(item1)
             data.append(item2)
-        
-        write_csv(table,data,headers,schema)
+
+        write_csv(table, data, headers, schema)
         return True
 
     except:
         return False
-    
 
 
-def _insert(data:list):
+def _insert(data: list):
     try:
         values = tuple_value(commands["values"])
-        values = values.strip(')')
-        values = values.strip('(')
+        values = values.strip(")")
+        values = values.strip("(")
 
-        values = values.split(',')
+        values = values.split(",")
         headers = list(data[0])
-        #verifie if the amount of arguments passed to values is right
+        # verifie if the amount of arguments passed to values is right
         if len(headers) != len(values):
-            print("Error : Wrong arguments near {}".format(tuple_value(commands["values"])))
+            print(
+                "Error : Wrong arguments near {}".format(
+                    tuple_value(commands["values"])
+                )
+            )
             return False
-        
-        values = dict(zip(headers,values)) #transform values in a dictionary to be inserted
 
-        #verifies the type of inserted value before insert
+        values = dict(
+            zip(headers, values)
+        )  # transform values in a dictionary to be inserted
+
+        # verifies the type of inserted value before insert
         if len(data) > 0:
             for key in data[0]:
                 if data[0][key].isnumeric():
@@ -375,14 +389,18 @@ def _insert(data:list):
                         print("Error : Value types didn't match")
                         return False
                 else:
-                    print("Unexpected error near {}".format(tuple_value(commands["values"])))
+                    print(
+                        "Unexpected error near {}".format(
+                            tuple_value(commands["values"])
+                        )
+                    )
                     return False
-        
-        data.append(values) #insert item
+
+        data.append(values)  # insert item
 
         table = tuple_value(commands["into"])
-        if check_existing_table(table,schema):
-            write_csv(table,data,headers,schema)
+        if check_existing_table(table, schema):
+            write_csv(table, data, headers, schema)
         else:
             print("Error : Wrong arguments near {}".format(table))
             return False
@@ -393,8 +411,7 @@ def _insert(data:list):
         return False
 
 
-def _delete(data:list):
-
+def _delete(data: list):
     try:
         table = tuple_value(commands["from"])
 
@@ -406,13 +423,12 @@ def _delete(data:list):
         else:
             for item in data_filtered:
                 data.remove(item)
-              
-        write_csv(table,data,headers,schema)
+
+        write_csv(table, data, headers, schema)
         return True
     except:
-        #No data for delete, so do nothing
+        # No data for delete, so do nothing
         return False
-
 
 
 # splits the query with it's respectively statements
@@ -442,14 +458,14 @@ def parser(query: str):
         query = query.replace(" ,", ",")
         query = query.replace(" =", "=")
         query = query.replace("= ", "=")
-        query = query.replace(" >=",">=")
-        query = query.replace(">= ",">=")
-        query = query.replace(" <=","<=")
-        query = query.replace("<= ","<=")
-        query = query.replace(" >",">")
-        query = query.replace("> ",">")
-        query = query.replace(" <","<")
-        query = query.replace("< ","<")
+        query = query.replace(" >=", ">=")
+        query = query.replace(">= ", ">=")
+        query = query.replace(" <=", "<=")
+        query = query.replace("<= ", "<=")
+        query = query.replace(" >", ">")
+        query = query.replace("> ", ">")
+        query = query.replace(" <", "<")
+        query = query.replace("< ", "<")
         query = query.replace("order by", "orderby")
 
         # splits sql command using space as separator
@@ -508,16 +524,16 @@ def parser(query: str):
             commands["select"] = columns, i
         elif "update" in query_list:
             i = query_list.index("set")
-            set = query_list[i+1]
-            commands["set"] = set,i
+            set = query_list[i + 1]
+            commands["set"] = set, i
         elif "insert" in query_list:
             i = query_list.index("values")
             values = query_list[i + 1]
-            commands["values"] = values,i
+            commands["values"] = values, i
         elif "delete" in query_list:
             i = query_list.index("from")
-            delete = ' '
-            commands["delete"] = delete,i
+            delete = " "
+            commands["delete"] = delete, i
         else:
             print("Error : unexpected")
             return False
@@ -554,11 +570,10 @@ def parser(query: str):
             _insert(data)
         elif tuple_value(commands["update"]):
             _update(data)
-    
+
     except:
         print("Error : Invalid query")
         return False
-    
 
 
 def check_existing_table(table: str, schema: str):
