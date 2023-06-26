@@ -20,7 +20,7 @@ def mysqlconnect():
         db_connection=mysql.connector.connect(**conn_params)
     except:
         print("error : Schema not found")
-        return 0
+        return False
     
     print('Connected to server!')
     return db_connection
@@ -29,9 +29,9 @@ def mysql_check_table(table:str,cursor):
     try:
         query = ('select * from {}').format(table)
         cursor.execute(query)
-        return 1
+        return True
     except:
-        return 0
+        return False
 
 
 def mysqlimport():
