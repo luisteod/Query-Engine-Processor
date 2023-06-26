@@ -1,11 +1,12 @@
 import mysql.connector
-import csv
 import engine
+import os
 
-host_glob = 'localhost'
-user_glob = 'root'
-password_glob = 'Henrique312'
-database_glob = 0
+host_glob = os.environ.get('HOST_MYSQL')
+user_glob = os.environ.get('USER_MYSQL')
+password_glob = os.environ.get('PASSWORD_MYSQL')
+port_glob = os.environ.get('PORT_MYSQL')
+database_glob = None #Leave this field unchanged 
 
 def mysqlconnect():
 
@@ -13,7 +14,8 @@ def mysqlconnect():
         'host':host_glob,
         'user':user_glob,
         'password':password_glob,
-        'database': database_glob
+        'database': database_glob,
+        'port': port_glob
     }
 
     try:
@@ -33,11 +35,28 @@ def mysql_check_table(table:str,cursor):
     except:
         return False
 
+def show_tables(cursor):
+    print("Tables in {}:".format(database_glob))
+    cursor.execute("show tables;")
+    for row in cursor:
+        for key in row:
+            print('* '+row[key].strip("'"))
+
+def show_database():
+    conn = mysql.connector.connect (user=user_glob, password=password_glob,
+                               host=host_glob,buffered=True)
+    cursor = conn.cursor()
+    databases = ("show databases;")
+    cursor.execute(databases)
+    print("Schemas in MySQL server:")
+    for (databases) in cursor:
+        print ('* '+databases[0])
 
 def mysqlimport():
     
     global database_glob
    
+    show_database()
     conn = None
     while not conn :
         print("Select schema: ")
@@ -46,6 +65,7 @@ def mysqlimport():
    
     cursor = conn.cursor(dictionary=True,buffered=True)
     
+    show_tables(cursor)
     print('Type the table to import : ')
     table = input('>> ')
 

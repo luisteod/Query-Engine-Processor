@@ -1,12 +1,12 @@
 import psycopg2
-import csv
 import engine
+import os
 
-host_glob = 'localhost'
-database_glob = 0
-user_glob = 'postgres'
-password_glob = 'Henrique312'
-port_glob = '5432'
+host_glob = os.environ.get('HOST_POSTGRES')
+user_glob = os.environ.get('USER_POSTGRES')
+password_glob = os.environ.get('PASSWORD_POSTGRES')
+port_glob = os.environ.get('PORT_POSTGRES')
+database_glob = None 
 
 def postgresconect():
 
@@ -36,9 +36,26 @@ def postgres_check_table(table: str, cursor):
     except:
         return 0
 
+def show_tables(cursor):
+    print("Tables in {}:".format(database_glob))
+    cursor.execute("SELECT * FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema';")
+    for row in cursor:
+        print('* '+row[1])
+
+def show_database():
+    db_connection = psycopg2.connect(user=user_glob,password=password_glob,
+                                     host=host_glob,port=port_glob)
+    cursor = db_connection.cursor()
+    databases = "SELECT datname FROM pg_database WHERE datistemplate = false;"
+    cursor.execute(databases)
+    print("Schemas in POSTGRES server:")
+    for databases in cursor:
+        print("* "+databases[0].strip("'"))
+
 def postgresimport():
     global database_glob
 
+    show_database()
     conn = None
     while not conn:
         print("Select schema: ")
@@ -47,6 +64,7 @@ def postgresimport():
 
     cursor = conn.cursor()
 
+    show_tables(cursor)
     print('Type the table to import : ')
     table = input('>> ')
 

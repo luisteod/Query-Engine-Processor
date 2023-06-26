@@ -1,8 +1,11 @@
+from dotenv import load_dotenv
+load_dotenv()
 import csv
-import mysql_handler
-import postgres_handler
+import mysql_import
+import postgres_import
 import csv_import
 import os
+
 
 schema = None
 commands = {}
@@ -130,13 +133,11 @@ def _from():
         if commands["from"]:
             table_from = tuple_value(commands["from"])
             data_from = data_from_table(table_from, schema)
-            data_from = _where(data_from) #filter aplication
             data = data_from
 
             if tuple_value(commands["join"]) != None:
                 table_join = tuple_value(commands["join"])
                 data_join = data_from_table(table_join, schema)
-                data_join = _where(data_join)
                 data = _join(data_from, data_join)
 
         elif commands["into"]:
@@ -286,12 +287,11 @@ def _select(data: list):
                 print(headers)
 
                 for row in data:
-                    # printable = []
-                    # for key in iter(row):
-                    #     if key in headers:
-                    #         printable.append(row[key])
-                    # print(printable)
-                    print(row)
+                    printable = []
+                    for key in iter(row):
+                        if key in headers:
+                            printable.append(row[key])
+                    print(printable)
 
                 return True
         except:
@@ -387,8 +387,8 @@ def _insert(data: list):
                     else:
                         print("Error : Value types didn't match")
                         return False
-                elif data[0][key].isalpha():
-                    if values[key].isalpha():
+                elif data[0][key].isascii():
+                    if values[key].isascii():
                         continue
                     else:
                         print("Error : Value types didn't match")
@@ -592,21 +592,17 @@ def parser(query: str):
             clause = query_list[i + 1]
             commands["order by"] = clause, i
 
-        if(is_query_valid()):
-            data = _from()
+        # if(is_query_valid()):
+        data = _from()
 
-            if tuple_value(commands["select"]):
-                _select(data)
-            elif tuple_value(commands["delete"]):
-                _delete(data)
-            elif tuple_value(commands["into"]):
-                _insert(data)
-            elif tuple_value(commands["update"]):
-                _update(data)
-
-        else:
-            print("Error : Invalid query")
-            return False
+        if tuple_value(commands["select"]):
+            _select(data)
+        elif tuple_value(commands["delete"]):
+            _delete(data)
+        elif tuple_value(commands["into"]):
+            _insert(data)
+        elif tuple_value(commands["update"]):
+            _update(data)
 
     except:
         print("Error : Invalid query")
@@ -644,9 +640,9 @@ def data_import():
         print("Select csv or server (mysql or postgres)")
         option = input(">> ")
     if option == "mysql":
-        mysql_handler.mysqlimport()
+        mysql_import.mysqlimport()
     elif option == "postgres":
-        postgres_handler.postgresimport()
+        postgres_import.postgresimport()
     elif option == "csv":
         csv_import.csv_import()
     return
@@ -655,8 +651,8 @@ def data_import():
 def list_schemas():
     files = os.listdir(os.getcwd() + "/schemas")
     for it in files:
-        printable = it.strip(".csv")
-        print("@ " + printable)
+        printable = it.replace(".csv",'')
+        print("* " + printable)
 
 
 def query():
@@ -667,16 +663,16 @@ def query():
         if retype == "y":
             print("Select schema :")
             list_schemas()
-            print()
+            
             schema = input(">> ")
-            print()
+            
             if check_existing_schema(schema):
                 retype_query = "y"
                 while retype_query != "y" or retype_query != "n":
                     if retype_query == "y":
                         print("Type query : ")
                         query = input(">> ")
-                        print()
+                        
                         parser(query)
                     elif retype_query == "n":
                         return True
@@ -703,9 +699,10 @@ def main():
         query()
     elif answer == "e":
         return False
-    else:
-        return
+    
+    return True
 
 
 if __name__ == "__main__":
-    main()
+    while main():
+        continue
